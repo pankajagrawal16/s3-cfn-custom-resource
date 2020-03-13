@@ -1,0 +1,57 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS CloudFormation Template to provision custom resources
+
+Resources:
+  S3BucketFolderExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - s3:PutObject
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                Resource: !Sub 'arn:aws:logs:region:${AWS::AccountId}:*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:region:${AWS::AccountId}:log-group:/aws/lambda/S3CreateFolder:*'
+
+  S3CreateFolder:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri:  ./customresources
+      FunctionName: S3CreateFolder
+      Handler: 's3.handler'
+      MemorySize: 128
+      Role: !GetAtt S3BucketFolderExecutionRole.Arn
+      Runtime: python3.7
+      Timeout: 30
+
+Outputs:
+  S3CreateFolderArn:
+    Description: "Arn for custom resource for creating sub folder inside passed S3 buckets"
+    Value: !GetAtt 'S3CreateFolder.Arn'
+    Export:
+      Name: !Sub ${AWS::StackName}-S3CreateFolder

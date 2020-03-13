@@ -1,0 +1,25 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Example usage of custom resource
+
+Parameters:
+  BucketName:
+    Type: String
+
+
+Resources:
+  S3BucketSample:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+
+  CreateFolderInS3BucketSample:
+    Type: Custom::CreateFolderInS3BucketSample
+    DependsOn: S3BucketSample
+    Properties:
+      ServiceToken:
+        Fn::ImportValue: "s3-custom-resources-S3CreateFolder"
+      S3Bucket: !Ref BucketName
+      SubFolders:
+        - Folder1
+        - Folder2
